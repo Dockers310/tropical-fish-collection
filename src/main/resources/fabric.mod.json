@@ -1,0 +1,39 @@
+	{
+		"schemaVersion": 1,
+		"id": "tropicalfishcollection",
+		"version": "${version}",
+		"name": "Tropical Fish Collection",
+		"description": "Track and collect all 3072 tropical fish variants! Catch fish with a bucket, view your collection in a beautiful grid with sorting, filtering, and tooltips. Progress is saved per world/server. Fully client-side, works on any server",
+		"authors": ["Dok_Si"],
+		"contact": {
+			"homepage": "https://modrinth.com/mod/tropical-fish-collection",
+			"sources": "https://github.com/Dockers310/tropical-fish-collection"
+		},
+		"mixins": [
+			"tropicalfishcollection.mixins.json"
+		],
+		"license": "MIT",
+		"icon": "assets/tropicalfishcollection/icon.png",
+		"environment": "*",
+		"entrypoints": {
+			"main": ["com.dok_si.tropicalfish.TropicalFishCollection"],
+			"client": ["com.dok_si.tropicalfish.TropicalFishCollectionClient"],
+			"modmenu": ["com.dok_si.tropicalfish.config.ModMenuIntegration"]
+		},
+		"custom": {
+			"modmenu": {
+				"links": {
+					"modmenu.modrinth": "https://modrinth.com/mod/tropical-fish-collection"
+				}
+			}
+		},
+		"depends": {
+			"fabricloader": ">=0.18.4",
+			"minecraft": "1.21.11",
+			"fabric-api": "*",
+			"yet_another_config_lib_v3": "*"
+		},
+		"suggests": {
+			"modmenu": ">=17.0.0"
+		}
+	}
