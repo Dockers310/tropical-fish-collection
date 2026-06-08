@@ -11,31 +11,20 @@ import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.passive.TropicalFishEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.DyeColor;
 import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
-
-import java.util.HashSet;
+import net.minecraft.screen.slot.Slot;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
-/**
- * Рисует цветной индикатор на вёдрах с рыбой в контейнерах.
- *
- * Показывается ТОЛЬКО когда зажат Left Shift (TOGGLE_INDICATORS).
- *
- * Цвета:
- *   🟢 ЗЕЛЁНЫЙ  — рыба есть в коллекции, встречается первый раз в этом контейнере
- *   🟡 ЖЁЛТЫЙ   — рыба есть в коллекции, но в этом контейнере дубликат
- *   🔴 КРАСНЫЙ  — рыбы НЕТ в коллекции (стоит взять!)
- *
- * Снимок коллекции делается при открытии контейнера и не меняется пока он открыт.
- */
 public class BucketDecorator {
 
     private static final KeyBinding.Category CATEGORY =
             new KeyBinding.Category(Identifier.of(TropicalFishCollection.MOD_ID, "category"));
 
-    /** Зажатый Shift = показать индикаторы */
     public static final KeyBinding TOGGLE_INDICATORS = new KeyBinding(
             "key.tropicalfishcollection.toggle_indicators",
             InputUtil.Type.KEYSYM,
@@ -43,34 +32,67 @@ public class BucketDecorator {
             CATEGORY
     );
 
-    /**
-     * Варианты уже встреченные в ТЕКУЩЕМ открытом контейнере.
-     * Сбрасывается каждый кадр из HandledScreenMixin.
-     */
-    private static final Set<Integer> seenInThisContainer = new HashSet<>();
+    // variant -> сколько раз встречен в текущем контейнере за этот кадр
+    private static final Map<Integer, Integer> seenThisFrame = new HashMap<>();
 
-    /**
-     * Снимок коллекции на момент открытия контейнера.
-     * Не меняется пока контейнер открыт.
-     */
-    private static Set<Integer> collectionSnapshot = new HashSet<>();
+    // Снимок коллекции на момент открытия контейнера
+    private static Set<Integer> collectionSnapshot = Set.of();
 
-    /**
-     * Вызывается из HandledScreenMixin перед рендером каждого контейнера.
-     */
+    // Вариант под курсором мыши в текущем кадре (-1 = нет)
+    private static int hoveredVariant = -1;
+    public static void setHoveredSlot(Slot slot) {
+        hoveredSlot = slot;
+    }
+    public static Slot getHoveredSlot() {
+        return hoveredSlot;
+    }
+    private static Slot hoveredSlot = null;
+    // ── Сброс в начале каждого кадра ────────────────────────────────────
+
     public static void resetForNewContainer() {
-        seenInThisContainer.clear();
-        collectionSnapshot = new HashSet<>(PlayerCollectionState.getCollected());
+        seenThisFrame.clear();
+        hoveredVariant = -1;
+        hoveredSlot = null;
+        collectionSnapshot = new java.util.HashSet<>(PlayerCollectionState.getCollected());
+    }
+
+    // ── Hover-подсветка ──────────────────────────────────────────────────
+
+    /** Запомнить вариант под курсором (вызывается из afterRender). */
+    public static void setHoveredVariant(int variant) {
+        hoveredVariant = variant;
+    }
+
+    /** Вариант под курсором в текущем кадре. */
+    public static int getHoveredVariant() {
+        return hoveredVariant;
     }
 
     /**
-     * Возвращает ARGB цвет индикатора для данного стека,
-     * или 0 если Shift не зажат / стек не является ведром с рыбой.
+     * Цвет подсветки для слота на который НАВЕЛИ:
+     *   Зелёный — есть в коллекции
+     *   Красный — нет в коллекции
      */
-    public static int getIndicatorColor(ItemStack stack) {
-        // Показываем только пока зажат Shift
-        if (!isShiftHeld()) return 0;
+    public static int getHoveredSlotColor(int variant) {
+        boolean collected = collectionSnapshot.contains(variant);
+        return collected ? 0x6000FF00 : 0x60FF0000;
+    }
 
+    /**
+     * Цвет подсветки для ДУБЛИКАТОВ hovered варианта в контейнере.
+     * Жёлтый — тот же тип что под курсором, но другой слот.
+     * 0 — не подсвечивать.
+     */
+    public static int getHoverHighlightColor(int thisVariant) {
+        if (hoveredVariant < 0) return 0;
+        if (thisVariant != hoveredVariant) return 0;
+        return 0x60FFFF00;
+    }
+
+    // ── Угловой индикатор (по Shift) ─────────────────────────────────────
+
+    public static int getIndicatorColor(ItemStack stack) {
+        if (!isShiftHeld()) return 0;
         if (!stack.isOf(Items.TROPICAL_FISH_BUCKET)) return 0;
 
         int variant = extractVariant(stack);
@@ -80,23 +102,21 @@ public class BucketDecorator {
         boolean collected = collectionSnapshot.contains(variant);
 
         if (!collected) {
-            // 🔴 Красный — рыбы нет в коллекции
-            return hexToArgb(config.indicatorUncollectedHex, config.indicatorUncollectedAlpha);
+            return rgbToArgb(config.indicatorUncollectedRGB, config.indicatorUncollectedAlpha);
         }
 
-        if (seenInThisContainer.contains(variant)) {
-            // 🟡 Жёлтый — дубликат в этом контейнере
-            return hexToArgb(config.indicatorDuplicateHex, config.indicatorDuplicateAlpha);
+        int seen = seenThisFrame.getOrDefault(variant, 0);
+        seenThisFrame.put(variant, seen + 1);
+
+        if (seen == 0) {
+            return rgbToArgb(config.indicatorCollectedRGB, config.indicatorCollectedAlpha);
         } else {
-            // 🟢 Зелёный — первое появление, рыба собрана
-            seenInThisContainer.add(variant);
-            return hexToArgb(config.indicatorCollectedHex, config.indicatorCollectedAlpha);
+            return rgbToArgb(config.indicatorDuplicateRGB, config.indicatorDuplicateAlpha);
         }
     }
 
-    /**
-     * Проверяет зажат ли Left Shift через GLFW.
-     */
+    // ── Утилиты ──────────────────────────────────────────────────────────
+
     private static boolean isShiftHeld() {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.getWindow() == null) return false;
@@ -105,9 +125,8 @@ public class BucketDecorator {
                 || GLFW.glfwGetKey(handle, GLFW.GLFW_KEY_RIGHT_SHIFT) == GLFW.GLFW_PRESS;
     }
 
-    // ------------------------------------------------------------------
-
-    private static int extractVariant(ItemStack stack) {
+    public static int extractVariant(ItemStack stack) {
+        // 1. DataComponents (1.21+)
         DyeColor base   = stack.get(DataComponentTypes.TROPICAL_FISH_BASE_COLOR);
         DyeColor patCol = stack.get(DataComponentTypes.TROPICAL_FISH_PATTERN_COLOR);
         TropicalFishEntity.Pattern pat = stack.get(DataComponentTypes.TROPICAL_FISH_PATTERN);
@@ -116,21 +135,31 @@ public class BucketDecorator {
             return TropicalFishData.encode(pat.ordinal(), base.ordinal(), patCol.ordinal());
         }
 
+        // 2. NBT fallback для спавнерных/именованных рыб
         var bucketData = stack.get(DataComponentTypes.BUCKET_ENTITY_DATA);
         if (bucketData != null) {
-            var nbt = bucketData.copyNbt();
-            if (nbt.contains("BucketVariantTag")) return nbt.getInt("BucketVariantTag").orElse(-1);
-            if (nbt.contains("variant"))           return nbt.getInt("variant").orElse(-1);
+            NbtCompound nbt = bucketData.copyNbt();
+            if (nbt.contains("BucketVariantTag")) {
+                int raw = nbt.getInt("BucketVariantTag").orElse(-1);
+                if (raw >= 0) return decodeVanillaRaw(raw);
+            }
+            if (nbt.contains("variant")) {
+                int raw = nbt.getInt("variant").orElse(-1);
+                if (raw >= 0) return decodeVanillaRaw(raw);
+            }
         }
         return -1;
     }
 
-    private static int hexToArgb(String hex, int alpha) {
-        try {
-            if (hex.startsWith("#")) hex = hex.substring(1);
-            return (alpha << 24) | Integer.parseInt(hex, 16);
-        } catch (Exception e) {
-            return 0xFF000000;
-        }
+    private static int decodeVanillaRaw(int raw) {
+        int pattern      = (raw >> 8)  & 0xFF;
+        int base         = (raw >> 16) & 0xFF;
+        int patternColor = (raw >> 24) & 0xFF;
+        if (pattern >= 12 || base >= 16 || patternColor >= 16) return -1;
+        return TropicalFishData.encode(pattern, base, patternColor);
+    }
+
+    private static int rgbToArgb(int rgb, int alpha) {
+        return (alpha << 24) | (rgb & 0xFFFFFF);
     }
 }

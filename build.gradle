@@ -1,56 +1,56 @@
-plugins {
-	id 'fabric-loom' version '1.16-SNAPSHOT'
-	id 'maven-publish'
-}
-
-version = project.mod_version
-group = project.maven_group
-
-repositories {
-	maven {
-		url = uri("${project.projectDir}/libs")
+	plugins {
+		id 'fabric-loom' version '1.16-SNAPSHOT'
+		id 'maven-publish'
 	}
-	mavenCentral()
-	maven {
-		name = "Terraformers"
-		url = "https://maven.terraformersmc.com/"
+
+	version = project.mod_version
+	group = project.maven_group
+
+	repositories {
+		maven {
+			url = uri("${project.projectDir}/libs")
+		}
+		mavenCentral()
+		maven {
+			name = "Terraformers"
+			url = "https://maven.terraformersmc.com/"
+		}
+		maven {
+			url = "https://maven.fabricmc.net/"
+		}
+		maven {
+			name = "Xander Maven"
+			url = "https://maven.isxander.dev/releases"
+		}
 	}
-	maven {
-		url = "https://maven.fabricmc.net/"
+
+	dependencies {
+		minecraft "com.mojang:minecraft:${project.minecraft_version}"
+		mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+		modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+		modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+		modImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
+		modImplementation "dev.isxander:yet-another-config-lib:${project.yacl_version}"
+
 	}
-	maven {
-		name = "Xander Maven"
-		url = "https://maven.isxander.dev/releases"
+
+	processResources {
+		inputs.property "version", project.version
+		filteringCharset "UTF-8"
+
+		filesMatching("fabric.mod.json") {
+			expand "version": project.version
+		}
 	}
-}
 
-dependencies {
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-	modImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
-	modImplementation "dev.isxander:yet-another-config-lib:${project.yacl_version}"
-
-}
-
-processResources {
-	inputs.property "version", project.version
-	filteringCharset "UTF-8"
-
-	filesMatching("fabric.mod.json") {
-		expand "version": project.version
+	tasks.withType(JavaCompile).configureEach {
+		it.options.encoding = "UTF-8"
+		it.options.release = 21
 	}
-}
 
-tasks.withType(JavaCompile).configureEach {
-	it.options.encoding = "UTF-8"
-	it.options.release = 21
-}
-
-java {
-	withSourcesJar()
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
+	java {
+		withSourcesJar()
+		toolchain {
+			languageVersion = JavaLanguageVersion.of(21)
+		}
 	}
-}

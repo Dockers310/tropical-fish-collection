@@ -144,7 +144,10 @@
   "tropicalfishcollection.color.black": "Black",
 
   "config.tropicalfishcollection.highlight_uncollected_fish": "Highlight uncollected fish",
-  "config.tropicalfishcollection.highlight_color_hex": "Fish highlight color (HEX)",
-  "config.tropicalfishcollection.highlight_color_alpha": "Fish highlight opacity",
-  "config.tropicalfishcollection.highlight_range": "Highlight range (blocks)"
+  "config.tropicalfishcollection.highlight_range": "Highlight range (blocks)",
+
+  "config.tropicalfishcollection.highlight_color": "Fish highlight color",
+  "config.tropicalfishcollection.highlight_color.desc": "Color of the glowing outline on uncollected fish",
+  "config.tropicalfishcollection.highlight_alpha": "Highlight opacity",
+  "config.tropicalfishcollection.highlight_alpha.desc": "Opacity of the fish highlight (0 = transparent, 255 = solid)"
 }

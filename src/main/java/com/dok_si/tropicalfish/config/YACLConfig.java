@@ -38,36 +38,35 @@ public class YACLConfig {
     @SerialEntry public int maxBucketIcons = 256;
 
     // ── Цвета ────────────────────────────────────────────────────────────
-    @SerialEntry public String backgroundHex = "#000000";
+    @SerialEntry public int backgroundRGB = 0x000000;
     @SerialEntry public int backgroundAlpha = 204;
     @SerialEntry public String backgroundImage = "";
-    @SerialEntry public String checkHex = "#00FF00";
+    @SerialEntry public int checkRGB = 0x00FF00;
     @SerialEntry public int checkAlpha = 255;
-    @SerialEntry public String uncollectedHex = "#444444";
+    @SerialEntry public int uncollectedRGB = 0x444444;
     @SerialEntry public int uncollectedAlpha = 255;
     @SerialEntry public int cellBorderWidth = 0;
-    @SerialEntry public String cellBorderHex = "#000000";
+    @SerialEntry public int cellBorderRGB = 0x000000;
     @SerialEntry public int cellBorderAlpha = 255;
-    @SerialEntry public String statsTextHex = "#FFAA00";
+    @SerialEntry public int statsTextRGB = 0xFFAA00;
     @SerialEntry public int statsTextAlpha = 255;
 
     // ── Индикаторы на вёдрах ─────────────────────────────────────────────
-    @SerialEntry public String indicatorCollectedHex = "#00FF00";
+    @SerialEntry public int indicatorCollectedRGB = 0x00FF00;
     @SerialEntry public int indicatorCollectedAlpha = 255;
-    @SerialEntry public String indicatorUncollectedHex = "#FF0000";
+    @SerialEntry public int indicatorUncollectedRGB = 0xFF0000;
     @SerialEntry public int indicatorUncollectedAlpha = 255;
-    @SerialEntry public String indicatorDuplicateHex = "#FFFF00";
+    @SerialEntry public int indicatorDuplicateRGB = 0xFFFF00;
     @SerialEntry public int indicatorDuplicateAlpha = 255;
     @SerialEntry public int indicatorSize = 6;
     /** false = только по Shift, true = всегда */
-    @SerialEntry public boolean indicatorAlwaysShow = false;
+    @SerialEntry public boolean indicatorAlwaysShow = true;
 
     // ── Подсветка рыб в мире ─────────────────────────────────────────────
-    /** По умолчанию ВЫКЛЮЧЕНО */
     @SerialEntry public boolean highlightUncollectedFish = false;
-    @SerialEntry public String highlightColorHex = "#FFFF00";
-    @SerialEntry public int highlightColorAlpha = 180;
-    @SerialEntry public int highlightRange = 16;
+    @SerialEntry public int     highlightRGB           = 0xFFFF00;
+    @SerialEntry public int     highlightAlpha         = 180;
+    @SerialEntry public int     highlightRange         = 16;
 
     // ── Уведомления ───────────────────────────────────────────────────────
     @SerialEntry public int toastDurationMs = 5000;

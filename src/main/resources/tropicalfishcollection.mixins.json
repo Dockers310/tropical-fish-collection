@@ -1,11 +1,14 @@
-{
+﻿{
   "required": true,
   "package": "com.dok_si.tropicalfish.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
     "HandledScreenMixin",
     "MessageMixin",
-    "FishGlowMixin"
+    "FishGlowMixin",
+    "FishGlowColorMixin",
+    "TropicalFishEntityAccessor",
+    "HandledScreenAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

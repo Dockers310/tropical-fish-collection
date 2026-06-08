@@ -145,7 +145,10 @@
   "tropicalfishcollection.color.red": "Красный",
   "tropicalfishcollection.color.black": "Чёрный",
   "config.tropicalfishcollection.highlight_uncollected_fish": "Подсвечивать несобранных рыб",
-  "config.tropicalfishcollection.highlight_color_hex": "Цвет подсветки рыб (HEX)",
-  "config.tropicalfishcollection.highlight_color_alpha": "Прозрачность подсветки рыб",
-  "config.tropicalfishcollection.highlight_range": "Дальность подсветки (блоков)"
+  "config.tropicalfishcollection.highlight_range": "Дальность подсветки (блоков)",
+
+  "config.tropicalfishcollection.highlight_color": "Цвет подсветки рыб",
+  "config.tropicalfishcollection.highlight_color.desc": "Цвет светящегося контура несобранных рыб",
+  "config.tropicalfishcollection.highlight_alpha": "Прозрачность подсветки",
+  "config.tropicalfishcollection.highlight_alpha.desc": "Прозрачность подсветки (0 – невидимо, 255 – полностью)"
 }

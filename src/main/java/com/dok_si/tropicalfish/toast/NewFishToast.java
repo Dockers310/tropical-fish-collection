@@ -9,25 +9,6 @@ import net.minecraft.client.toast.ToastManager;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
-/**
- * Красивый тост о новой тропической рыбе.
- *
- * Одиночный тост:
- *   ┌─────────────────────────────────────┐
- *   │ ░░  🐠 Новая рыба!                  │  ← жёлтый заголовок
- *   │ ░░  Санстрик                        │  ← голубой узор
- *   │ ░░  ██ Белый  /  ██ Оранжевый       │  ← цветные плашки основного и узора
- *   │ ░░  Найдено: 42 / 3072  ░░░░░░░░░   │  ← прогресс-бар
- *   └─────────────────────────────────────┘
- *   Левая полоса = основной цвет рыбы
- *
- * Групповой тост:
- *   ┌─────────────────────────────────────┐
- *   │ 🎣  Найдено 5 новых рыб!            │
- *   │     Проверьте коллекцию             │
- *   │     Итого: 47 / 3072  ░░░░░░░░░░░   │
- *   └─────────────────────────────────────┘
- */
 public class NewFishToast implements Toast {
 
     private static final int WIDTH  = 220;
@@ -63,8 +44,6 @@ public class NewFishToast implements Toast {
         this.patternArgb = 0xFF2E9E6A;
     }
 
-    // ==================================================================
-
     @Override
     public void draw(DrawContext ctx, TextRenderer tr, long time) {
         if (startTime < 0) startTime = time;
@@ -74,9 +53,7 @@ public class NewFishToast implements Toast {
         int h = getHeight();
 
         // ---- Фон с градиентом ----
-        // Тёмная основа
         ctx.fill(0, 0, w, h, 0xF0131820);
-        // Градиент сверху (слегка светлее)
         ctx.fillGradient(0, 0, w, h / 2, 0x18FFFFFF, 0x00FFFFFF);
         // Левая цветная полоса (цвет основного тела рыбы)
         int stripeColor = (baseArgb & 0x00FFFFFF) | 0xEE000000;
@@ -103,7 +80,7 @@ public class NewFishToast implements Toast {
     }
 
     private void drawSingle(DrawContext ctx, TextRenderer tr, int w, int h) {
-        int lx = 10; // левый отступ текста (после полосы)
+        int lx = 10;
 
         // ---- Заголовок ----
         ctx.drawText(tr,
@@ -140,36 +117,28 @@ public class NewFishToast implements Toast {
     private void drawGroup(DrawContext ctx, TextRenderer tr, int w, int h) {
         int lx = 10;
 
-        // ---- Заголовок ----
         ctx.drawText(tr,
                 Text.literal("✦ ").formatted(Formatting.YELLOW)
                         .append(Text.translatable("toast.tropicalfishcollection.new_fish_many", count)
                                 .formatted(Formatting.YELLOW, Formatting.BOLD)),
                 lx, 6, -1, false);
 
-        // ---- Подпись ----
         ctx.drawText(tr,
                 Text.translatable("toast.tropicalfishcollection.check_collection")
                         .formatted(Formatting.GRAY),
                 lx, 17, -1, false);
 
-        // ---- Прогресс ----
         drawProgressLine(ctx, tr, lx, 27, w - 10);
     }
 
-    /**
-     * Рисует строку «Найдено: X / 3072» + прогресс-бар.
-     */
     private void drawProgressLine(DrawContext ctx, TextRenderer tr, int x, int y, int maxW) {
         int total     = TropicalFishData.TOTAL_VARIANTS;
         int collected = PlayerCollectionState.getCollectedCount();
         float pct     = (float) collected / total;
 
-        // Текст
         String text = collected + " / " + total;
         ctx.drawText(tr, Text.literal(text).formatted(Formatting.DARK_GRAY), x, y, -1, false);
 
-        // Бар
         int textW  = tr.getWidth(text) + 4;
         int barX   = x + textW;
         int barW   = maxW - textW;
@@ -179,10 +148,8 @@ public class NewFishToast implements Toast {
 
         ctx.fill(barX, barY, barX + barW, barY + barH, 0xFF222222);
         if (filled > 0) {
-            // Градиент прогресса: красный → жёлтый → зелёный
             int barColor = progressColor(pct);
             ctx.fill(barX, barY, barX + filled, barY + barH, barColor);
-            // Блик сверху
             ctx.fill(barX, barY, barX + filled, barY + 1, 0x44FFFFFF);
         }
     }
@@ -193,8 +160,6 @@ public class NewFishToast implements Toast {
         if (pct >= 0.2f) return 0xFFFFEE22;
         return 0xFFFF4422;
     }
-
-    // ==================================================================
 
     @Override
     public Visibility getVisibility() {

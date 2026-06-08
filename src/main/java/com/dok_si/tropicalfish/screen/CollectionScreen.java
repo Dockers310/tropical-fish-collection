@@ -4,6 +4,7 @@ import com.dok_si.tropicalfish.PlayerCollectionState;
 import com.dok_si.tropicalfish.TropicalFishCollection;
 import com.dok_si.tropicalfish.TropicalFishData;
 import com.dok_si.tropicalfish.client.BucketDecorator;
+import com.dok_si.tropicalfish.client.TropicalFishSprite;
 import com.dok_si.tropicalfish.config.YACLConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -17,21 +18,13 @@ import net.minecraft.item.Items;
 import net.minecraft.text.Text;
 import net.minecraft.util.DyeColor;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
-/**
- * Экран коллекции.
- *
- * Исправления v1.0.5:
- * - renderGrid: исправлен баг счётчика skip при onlyShowCollected
- *   (теперь пропускаем только реально видимые элементы, а не все подряд)
- * - Стрелки пагинации разнесены шире, номер страницы хорошо виден между ними
- * - getPageStart() больше не используется в renderStats (там теперь правильный visible-счётчик)
- */
 public class CollectionScreen extends Screen {
 
     private static final int CELL_PAD   = 2;
@@ -44,7 +37,7 @@ public class CollectionScreen extends Screen {
     private final List<Integer>          allVariants;
     private final Set<Integer>           collected;
     private List<Integer>                filtered;
-
+    // entityCache больше не нужен - удалено
     private int page, maxPage;
     private int cols, rows, iconSize;
     private int gridX, gridY;
@@ -66,8 +59,6 @@ public class CollectionScreen extends Screen {
     private long lastResetClick = 0;
     private static final long DBL_CLICK = 800;
 
-    // ── Constructor ────────────────────────────────────────────────────────
-
     public CollectionScreen() {
         super(Text.translatable("screen." + TropicalFishCollection.MOD_ID + ".collection"));
         this.allVariants = new ArrayList<>(TropicalFishData.generateAllVariants());
@@ -79,8 +70,6 @@ public class CollectionScreen extends Screen {
 
         applyConfig();
     }
-
-    // ── Config & layout ────────────────────────────────────────────────────
 
     private void applyConfig() {
         YACLConfig cfg = YACLConfig.HANDLER.instance();
@@ -162,8 +151,6 @@ public class CollectionScreen extends Screen {
         }
     }
 
-    // ── Init ───────────────────────────────────────────────────────────────
-
     @Override
     protected void init() {
         super.init();
@@ -174,7 +161,6 @@ public class CollectionScreen extends Screen {
         int gridW = cols * (iconSize + CELL_PAD) - CELL_PAD;
         int gridH = rows * (iconSize + CELL_PAD) - CELL_PAD;
 
-        // ── Верхняя панель ────────────────────────────────────────────────
         searchField = new TextFieldWidget(textRenderer, 4, 4, 130, 15, Text.literal(""));
         searchField.setText(searchText);
         searchField.setPlaceholder(Text.translatable("search.tropicalfishcollection.placeholder"));
@@ -197,38 +183,34 @@ public class CollectionScreen extends Screen {
         ).dimensions(4, 22, 58, 14).build());
 
         addDrawableChild(ButtonWidget.builder(
-                Text.literal("🏆 " + Text.translatable("button.tropicalfishcollection.leaderboard").getString()),
+                Text.literal(" " + Text.translatable("button.tropicalfishcollection.leaderboard").getString()),
                 b -> MinecraftClient.getInstance().setScreen(new LeaderboardScreen(this))
         ).dimensions(66, 22, 76, 14).build());
 
-        // ── Edit mode controls ────────────────────────────────────────────
         if (editMode) {
             int ey = 40;
-            addDrawableChild(ButtonWidget.builder(Text.literal("Grid"),    b -> selElem = 0).dimensions(4,   ey, 40, 12).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Stats"),   b -> selElem = 1).dimensions(48,  ey, 40, 12).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Buttons"), b -> selElem = 2).dimensions(92,  ey, 50, 12).build());
+            addDrawableChild(ButtonWidget.builder(Text.translatable("button.tropicalfishcollection.edit_grid"),    b -> selElem = 0).dimensions(4,   ey, 40, 12).build());
+            addDrawableChild(ButtonWidget.builder(Text.translatable("button.tropicalfishcollection.edit_stats"),   b -> selElem = 1).dimensions(48,  ey, 40, 12).build());
+            addDrawableChild(ButtonWidget.builder(Text.translatable("button.tropicalfishcollection.edit_buttons"), b -> selElem = 2).dimensions(92,  ey, 50, 12).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("↑"), b -> moveElem(0,-1)).dimensions(150, ey, 14, 12).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("↓"), b -> moveElem(0, 1)).dimensions(166, ey, 14, 12).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("←"), b -> moveElem(-1,0)).dimensions(182, ey, 14, 12).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("→"), b -> moveElem( 1,0)).dimensions(198, ey, 14, 12).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("+"), b -> scaleIcon( 1)).dimensions(216, ey, 14, 12).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("−"), b -> scaleIcon(-1)).dimensions(232, ey, 14, 12).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("-"), b -> scaleIcon(-1)).dimensions(232, ey, 14, 12).build());
         }
 
-        // ── Пагинация ─────────────────────────────────────────────────────
-        // Стрелки разнесены на ±60px от центра — номер страницы хорошо виден между ними
         int pageY  = gridY + gridH + 4;
         int pageCX = gridX + gridW / 2;
-        prevBtn = ButtonWidget.builder(Text.literal("◀"),
+        prevBtn = ButtonWidget.builder(Text.literal("<"),
                         b -> { if (page > 0) { page--; colorCache.clear(); } updateNav(); })
                 .dimensions(pageCX - 62, pageY, 20, 14).build();
-        nextBtn = ButtonWidget.builder(Text.literal("▶"),
+        nextBtn = ButtonWidget.builder(Text.literal(">"),
                         b -> { if (page < maxPage) { page++; colorCache.clear(); } updateNav(); })
                 .dimensions(pageCX + 42, pageY, 20, 14).build();
         addDrawableChild(prevBtn);
         addDrawableChild(nextBtn);
 
-        // ── Нижние кнопки ─────────────────────────────────────────────────
         if (cfg.showSortButtons) buildBottomButtons(cfg);
 
         updateNav();
@@ -300,12 +282,10 @@ public class CollectionScreen extends Screen {
         clearChildren(); init();
     }
 
-    // ── Render ─────────────────────────────────────────────────────────────
-
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
         YACLConfig cfg = YACLConfig.HANDLER.instance();
-        ctx.fill(0, 0, width, height, hex(cfg.backgroundHex, cfg.backgroundAlpha, 0xCC000000));
+        ctx.fill(0, 0, width, height, argb(cfg.backgroundRGB, cfg.backgroundAlpha));
         super.render(ctx, mouseX, mouseY, delta);
         renderStats(ctx, cfg);
         renderGrid(ctx, cfg, mouseX, mouseY);
@@ -321,7 +301,7 @@ public class CollectionScreen extends Screen {
         int sx    = (width - sw) / 2;
         int sy    = cfg.statsOffsetY;
         ctx.fill(sx - 5, sy - 2, sx + sw + 5, sy + 10, 0x88000000);
-        ctx.drawText(textRenderer, s, sx, sy, hex(cfg.statsTextHex, cfg.statsTextAlpha, 0xFFFFAA00), true);
+        ctx.drawText(textRenderer, s, sx, sy, argb(cfg.statsTextRGB, cfg.statsTextAlpha), true);
 
         int bw     = Math.max(sw + 16, 160);
         int bx     = (width - bw) / 2;
@@ -335,7 +315,6 @@ public class CollectionScreen extends Screen {
         String pctStr = String.format("%.2f%%", pct * 100f);
         ctx.drawCenteredTextWithShadow(textRenderer, pctStr, width / 2, by + 6, 0xFF888888);
 
-        // Узор текущей страницы — считаем через visible-счётчик (тот же алгоритм что в renderGrid)
         Set<Integer> pagePatterns = new HashSet<>();
         int perPage    = cols * rows;
         int skipTarget = page * perPage;
@@ -355,39 +334,25 @@ public class CollectionScreen extends Screen {
             ctx.drawCenteredTextWithShadow(textRenderer, ps, width / 2, by + 17, 0xFF777777);
         }
 
-        // Номер страницы — крупно, по центру между стрелками пагинации
-        int gridW   = cols * (iconSize + CELL_PAD) - CELL_PAD;
-        int gridH   = rows * (iconSize + CELL_PAD) - CELL_PAD;
+        int gridW    = cols * (iconSize + CELL_PAD) - CELL_PAD;
+        int gridH    = rows * (iconSize + CELL_PAD) - CELL_PAD;
         int pageNavY = gridY + gridH + 8;
         ctx.drawCenteredTextWithShadow(textRenderer,
-                "§e" + (page + 1) + " §7/ §e" + (maxPage + 1),
+                (page + 1) + " / " + (maxPage + 1),
                 gridX + gridW / 2, pageNavY, 0xFFFFFFFF);
     }
 
-    /**
-     * Рисует сетку вариантов на текущей странице.
-     *
-     * ИСПРАВЛЕНИЕ: счётчик skip теперь считает только реально видимые элементы
-     * (с учётом фильтра onlyShowCollected), а не все подряд.
-     * Старый баг: если onlyShowCollected=true и страница > 0,
-     * skip пропускал неправильное количество элементов → на странице 2+ показывался не тот узор.
-     */
     private void renderGrid(DrawContext ctx, YACLConfig cfg, int mx, int my) {
-        boolean drawIcons = cfg.showBucketIcon &&
-                (cfg.maxBucketIcons == 0 || cols * rows <= cfg.maxBucketIcons);
-
         int perPage    = cols * rows;
-        int skipTarget = page * perPage; // сколько видимых элементов пропустить
-        int visible    = 0;              // счётчик видимых (прошедших фильтр) элементов
-        int drawn      = 0;              // сколько уже нарисовали на этой странице
+        int skipTarget = page * perPage;
+        int visible    = 0;
+        int drawn      = 0;
 
         for (int i = 0; i < filtered.size() && drawn < perPage; i++) {
             int v = filtered.get(i);
 
-            // Применяем фильтр — несобранные пропускаем целиком
             if (cfg.onlyShowCollected && !collected.contains(v)) continue;
 
-            // Пропускаем элементы предыдущих страниц
             if (visible < skipTarget) {
                 visible++;
                 continue;
@@ -400,7 +365,7 @@ public class CollectionScreen extends Screen {
             int y   = gridY + row * (iconSize + CELL_PAD);
             boolean have = collected.contains(v);
 
-            // Фон ячейки
+            //
             if (have) {
                 long[] c = colorCache.computeIfAbsent(v, k -> new long[]{
                         TropicalFishData.getBaseColor(k), TropicalFishData.getPatternColor(k)});
@@ -409,32 +374,30 @@ public class CollectionScreen extends Screen {
                 ctx.fill(x + half, y, x + iconSize, y + iconSize, (int) c[1]);
             } else {
                 ctx.fill(x, y, x + iconSize, y + iconSize,
-                        hex(cfg.uncollectedHex, cfg.uncollectedAlpha, 0xFF444444));
+                        argb(cfg.uncollectedRGB, cfg.uncollectedAlpha));
             }
 
-            // Рамка ячейки
+            //
             if (cfg.cellBorderWidth > 0) {
-                int bw = cfg.cellBorderWidth, bc = hex(cfg.cellBorderHex, cfg.cellBorderAlpha, 0xFF000000);
+                int bw = cfg.cellBorderWidth;
+                int bc = argb(cfg.cellBorderRGB, cfg.cellBorderAlpha);
                 ctx.fill(x - bw, y - bw, x + iconSize + bw, y, bc);
                 ctx.fill(x - bw, y + iconSize, x + iconSize + bw, y + iconSize + bw, bc);
                 ctx.fill(x - bw, y, x, y + iconSize, bc);
                 ctx.fill(x + iconSize, y, x + iconSize + bw, y + iconSize, bc);
             }
 
-            // Иконка ведра
-            if (drawIcons) {
-                ItemStack stack = stackCache.computeIfAbsent(v, this::makeStack);
-                ctx.drawItemWithoutEntity(stack,
-                        x + (iconSize - ICON_BASE) / 2 + cfg.bucketOffsetX,
-                        y + (iconSize - ICON_BASE) / 2 + cfg.bucketOffsetY);
+            //    (  )
+            if (cfg.showBucketIcon && (cfg.maxBucketIcons == 0 || cols * rows <= cfg.maxBucketIcons)) {
+                drawFishSprite(ctx, v, x, y, iconSize, have);
             }
 
-            // Галочка для собранных
+            //
             if (have) ctx.drawText(textRenderer, "✔",
                     x + iconSize - 10, y + 2,
-                    hex(cfg.checkHex, cfg.checkAlpha, 0xFF00FF00), true);
+                    argb(cfg.checkRGB, cfg.checkAlpha), true);
 
-            // Тултип при наведении
+            //
             if (mx >= x && mx < x + iconSize && my >= y && my < y + iconSize
                     && cfg.tooltipMode != YACLConfig.TooltipMode.NEVER) {
                 ctx.drawTooltip(textRenderer, List.of(
@@ -450,11 +413,18 @@ public class CollectionScreen extends Screen {
         }
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────
+    /**
+     * Рисует иконку ведра с рыбой. Больше не использует живые сущности.
+     */
+    private void drawFishSprite(DrawContext ctx, int variant, int x, int y, int size, boolean have) {
+        ItemStack stack = stackCache.computeIfAbsent(variant, this::makeStack);
+        ctx.drawItemWithoutEntity(stack,
+                x + (size - ICON_BASE) / 2,
+                y + (size - ICON_BASE) / 2);
+    }
 
-    private int hex(String hex, int alpha, int fallback) {
-        try { if (hex.startsWith("#")) hex = hex.substring(1); return (alpha << 24) | Integer.parseInt(hex, 16); }
-        catch (Exception e) { return fallback; }
+    private int argb(int rgb, int alpha) {
+        return (alpha << 24) | (rgb & 0xFFFFFF);
     }
 
     private int pctColor(float p) {
@@ -473,8 +443,6 @@ public class CollectionScreen extends Screen {
     }
 
     private void updateNav() { prevBtn.active = page > 0; nextBtn.active = page < maxPage; }
-
-    // ── Edit / Free mode ───────────────────────────────────────────────────
 
     @Override
     public void tick() {
@@ -546,15 +514,13 @@ public class CollectionScreen extends Screen {
         YACLConfig.HANDLER.save(); clearChildren(); init();
     }
 
-    // ── Export ─────────────────────────────────────────────────────────────
-
     private void doExport() {
         Path out = MinecraftClient.getInstance().runDirectory.toPath()
                 .resolve("config/tropicalfishcollection/exported_fish.txt");
         try {
             Files.createDirectories(out.getParent());
             try (PrintWriter pw = new PrintWriter(new FileWriter(out.toFile()))) {
-                pw.printf("# Tropical Fish Collection — %d / %d%n", collected.size(), TropicalFishData.TOTAL_VARIANTS);
+                pw.printf("# Tropical Fish Collection - %d / %d%n", collected.size(), TropicalFishData.TOTAL_VARIANTS);
                 for (int v : collected) {
                     pw.printf("%d | %-14s | %-12s | %s%n", v,
                             TropicalFishData.getPatternText(TropicalFishData.getPatternIndex(v)).getString(),
@@ -563,7 +529,7 @@ public class CollectionScreen extends Screen {
                 }
             }
             if (MinecraftClient.getInstance().player != null)
-                MinecraftClient.getInstance().player.sendMessage(Text.literal("§aExported → " + out), false);
+                MinecraftClient.getInstance().player.sendMessage(Text.literal("aExported  " + out), false);
         } catch (Exception e) { TropicalFishCollection.LOGGER.error("Export failed", e); }
     }
 
