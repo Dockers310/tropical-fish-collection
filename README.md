@@ -19,7 +19,7 @@ A client-side Fabric mod that helps you track and collect **all 3072 variants of
 
 ### Installation
 
-1. Install [Fabric Loader](https://fabricmc.net/use/) for Minecraft 1.21.1  
+1. Install [Fabric Loader](https://fabricmc.net/use/) for Minecraft 1.21.10  
 2. Download [Fabric API](https://modrinth.com/mod/fabric-api), [Mod Menu](https://modrinth.com/mod/modmenu) and [YetAnotherConfigLib](https://modrinth.com/mod/yacl)  
 3. Place all `.jar` files into your `mods` folder  
 4. Done! Press **K** to open the collection screen
@@ -50,7 +50,7 @@ cd tropical-fish-collection
 
 ### Установка
 
-1. Установите [Fabric Loader](https://fabricmc.net/use/) для Minecraft 1.21.1
+1. Установите [Fabric Loader](https://fabricmc.net/use/) для Minecraft 1.21.10
 2. Скачайте [Fabric API](https://modrinth.com/mod/fabric-api), [Mod Menu](https://modrinth.com/mod/modmenu) и [YetAnotherConfigLib](https://modrinth.com/mod/yacl)
 3. Поместите все `.jar` файлы в папку `mods`
 4. Готово! Нажмите **K**, чтобы открыть экран коллекции
