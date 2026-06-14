@@ -18,7 +18,7 @@
 ],
 	"license": "MIT",
 	"icon": "assets/tropicalfishcollection/icon.png",
-	"environment": "*",
+	"environment": "client",
 	"entrypoints": {
 		"main": ["com.dok_si.tropicalfish.TropicalFishCollection"],
 		"client": ["com.dok_si.tropicalfish.TropicalFishCollectionClient"],
